@@ -8,6 +8,6 @@ const TransactionSchema = new mongoose.Schema({
     date: { type: Date, required: true },
     title: { type: String, required: true },
     note: { type: String, default: null }
-}, { timestamps: true }, { collection: 'Transaction' });
+}, { timestamps: true, collection: 'Transaction' });
 
 module.exports = mongoose.model('Transaction', TransactionSchema);
