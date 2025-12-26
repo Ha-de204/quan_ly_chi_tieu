@@ -1,11 +1,15 @@
 const transactionService = require('../../services/transaction.service');
 
 const createTransaction = async (req, res) => {
-    const user_id = req.user_id;
+   // const user_id = req.user_id;
+    const user_id = req.user_id || "658123456789012345678901";
     const { category_id, amount, type, date, title, note } = req.body;
 
+    console.log("Dữ liệu nhận được từ Flutter:", req.body);
+     console.log("User ID đang sử dụng:", user_id);
+
     if (!category_id || !amount || !type || !date || !title) {
-        return res.status(400).json({ message: 'Thiếu dữ liệu bắt buộc (categoryId, amount, type, date, title).' });
+        return res.status(400).json({ message: 'Thiếu dữ liệu bắt buộc (categoryId, amount, type, date, title).' , received: req.body});
     }
 
     try {
