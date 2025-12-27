@@ -1,7 +1,8 @@
 const budgetService = require('../../services/budget.service');
 
 const upsertBudget = async (req, res) => {
-    const user_id = req.user_id;
+    //const user_id = req.user_id;
+    const user_id = "658123456789012345678901";
     const { category_id, budget_amount, period } = req.body;
 
     if (!category_id || !budget_amount || !period) {
@@ -32,7 +33,8 @@ const upsertBudget = async (req, res) => {
 };
 
 const getBudgets = async (req, res) => {
-    const user_id = req.user_id;
+    //const user_id = req.user_id;
+    const user_id = "658123456789012345678901";
     const period = req.query.period;
 
     const defaultPeriod = period || new Date().toISOString().substring(0, 7);
@@ -48,8 +50,8 @@ const getBudgets = async (req, res) => {
 };
 
 const deleteBudget = async (req, res) => {
-    const user_id = req.user_id;
-
+    //const user_id = req.user_id;
+    const user_id = "658123456789012345678901";
     const budgetId = req.params.id;
 
     if (!budgetId || budgetId.length !== 24) {

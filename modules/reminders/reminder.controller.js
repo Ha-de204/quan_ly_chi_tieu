@@ -1,7 +1,8 @@
 const reminderService = require('../../services/reminder.service');
 
 const createReminder = async (req, res) => {
-    const user_id = req.user_id;
+    //const user_id = req.user_id;
+    const user_id = "658123456789012345678901";
     const { title, message, dueDate, frequency } = req.body;
 
     if (!title || !dueDate || !frequency) {
@@ -30,7 +31,8 @@ const createReminder = async (req, res) => {
 
 // lay tat ca loi nhac
 const getReminders = async (req, res) => {
-    const user_id = req.user_id;
+    //const user_id = req.user_id;
+    const user_id = "658123456789012345678901";
 
     try {
         const reminders = await reminderService.getRemindersByUserId(user_id);
@@ -43,7 +45,8 @@ const getReminders = async (req, res) => {
 
 // lay chi tiet 1 loi nhac
 const getReminderById = async (req, res) => {
-    const user_id = req.user_id;
+    //const user_id = req.user_id;
+    const user_id = "658123456789012345678901";
     const reminderId = req.params.id; // Chỉnh sửa: Bỏ parseInt
 
     // Chỉnh sửa: Kiểm tra định dạng ObjectId (24 ký tự)
@@ -67,7 +70,8 @@ const getReminderById = async (req, res) => {
 
 //update loi nhac
 const updateReminder = async (req, res) => {
-    const user_id = req.user_id;
+    //const user_id = req.user_id;
+    const user_id = "658123456789012345678901";
     const reminderId = req.params.id; // Chỉnh sửa: Bỏ parseInt
     const { title, message, dueDate, frequency, isEnabled } = req.body;
 
@@ -99,8 +103,9 @@ const updateReminder = async (req, res) => {
 
 // delete loi nhac
 const deleteReminder = async (req, res) => {
-    const user_id = req.user_id;
-    const reminderId = req.params.id; // Chỉnh sửa: Bỏ parseInt
+    //const user_id = req.user_id;
+    const user_id = "658123456789012345678901";
+    const reminderId = req.params.id;
 
     if (!reminderId || reminderId.length !== 24) {
         return res.status(400).json({ message: 'ID lời nhắc không hợp lệ.' });
