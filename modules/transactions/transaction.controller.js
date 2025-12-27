@@ -2,7 +2,7 @@ const transactionService = require('../../services/transaction.service');
 
 const createTransaction = async (req, res) => {
    // const user_id = req.user_id;
-    const user_id = req.user_id || "658123456789012345678901";
+    const user_id = "658123456789012345678901";
     const { category_id, amount, type, date, title, note } = req.body;
 
     console.log("Dữ liệu nhận được từ Flutter:", req.body);
@@ -35,7 +35,7 @@ const createTransaction = async (req, res) => {
 };
 
 const getTransactions = async (req, res) => {
-    const user_id = req.user_id;
+    const user_id = "658123456789012345678901";
 
     try {
         const transactions = await transactionService.getTransactionsByUserId(user_id);
@@ -48,7 +48,7 @@ const getTransactions = async (req, res) => {
 
 // Lấy chi tiết 1 giao dịch
 const getTransactionById = async (req, res) => {
-    const user_id = req.user_id;
+    const user_id = "658123456789012345678901";
     const transaction_id = req.params.id;
 
     if (!transaction_id || transaction_id.length !== 24) {
@@ -70,7 +70,7 @@ const getTransactionById = async (req, res) => {
 
 // Update giao dịch
 const updateTransaction = async (req, res) => {
-    const user_id = req.user_id;
+    const user_id = "658123456789012345678901";
     const transaction_id = req.params.id;
     const { category_id, amount, type, date, title, note } = req.body;
 
@@ -103,7 +103,7 @@ const updateTransaction = async (req, res) => {
 
 // Delete giao dịch
 const deleteTransaction = async (req, res) => {
-    const user_id = req.user_id;
+    const user_id = "658123456789012345678901";
     const transaction_id = req.params.id;
 
     if (!transaction_id || transaction_id.length !== 24) {
