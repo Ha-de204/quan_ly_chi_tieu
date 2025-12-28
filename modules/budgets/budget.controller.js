@@ -5,8 +5,8 @@ const upsertBudget = async (req, res) => {
     const user_id = "658123456789012345678901";
     const { category_id, budget_amount, period } = req.body;
 
-    if (!category_id || !budget_amount || !period) {
-        return res.status(400).json({ message: 'Thiếu dữ liệu bắt buộc (category_id, budget_amount, period).' });
+    if (!category_id || budget_amount === undefined || !period) {
+        return res.status(400).json({ success: false, message: 'Thiếu dữ liệu bắt buộc (category_id, budget_amount, period).' });
     }
 
     if (!/^\d{4}-\d{2}$/.test(period)) {
@@ -17,11 +17,12 @@ const upsertBudget = async (req, res) => {
         const budgetId = await budgetService.upsertBudget(
             user_id,
             category_id,
-            budget_amount,
+            Number(budget_amount),
             period
         );
 
         res.status(201).json({
+            success: true,
             budget_id: budgetId,
             message: 'Thiết lập/Cập nhật ngân sách thành công.'
         });
