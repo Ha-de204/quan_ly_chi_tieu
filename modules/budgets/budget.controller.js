@@ -42,7 +42,11 @@ const getBudgets = async (req, res) => {
 
     try {
         const budgets = await budgetService.getBudgetsAmountPeriod(user_id, defaultPeriod);
-
+        const cleanBudgets = budgets.map(b => ({
+                    ...b.toObject ? b.toObject() : b,
+                    category_id: b.category_id.toString(),
+                    _id: b._id.toString()
+        }));
         res.status(200).json(budgets);
     } catch (error) {
         console.error('Lỗi lấy danh sách ngân sách:', error);
