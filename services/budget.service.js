@@ -1,5 +1,5 @@
 const Budget = require('../models/Budget');
-const Transaction = require('../models/Transaction'); // Giả định bạn có model này
+const Transaction = require('../models/Transaction');
 const mongoose = require('mongoose');
 
 // 1. Logic Upsert (Cập nhật nếu có, chưa có thì thêm mới)
@@ -16,10 +16,9 @@ const upsertBudget = async (user_id, category_id, amount, period) => {
     return result._id;
 };
 
-// 2. Lấy ngân sách và số tiền đã chi tiêu
+// 2. Lấy ngân sách và số tiền đã chi tiêu theo tháng (Đã sửa lỗi chọn tháng khác)
 const getBudgetsAmountPeriod = async (user_id, period) => {
     const [year, month] = period.split('-').map(Number);
-    // Sử dụng Date.UTC để đảm bảo đồng nhất thời gian lọc
     const startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0));
     const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
 
@@ -80,39 +79,6 @@ const getBudgetsAmountPeriod = async (user_id, period) => {
     ]);
 
     return budgets;
-};
-
-        // 3. Lấy tổng ngân sách theo khoảng thời gian
-        const getBudgetAmountByDateRange = async (user_id, startDate, endDate) => {
-            const period = `${startDate.getFullYear()}-${(startDate.getMonth() + 1).toString().padStart(2, '0')}`;
-
-            const result = await Budget.aggregate([
-                { $match: {
-                    user_id: new mongoose.Types.ObjectId(user_id),
-                    period: period,
-                    $or: [{ category_id: null }, { category_id: { $exists: false } }]
-                }},
-                { $group: { _id: null, total: { $sum: '$budget_amount' } } }
-            ]);
-
-            return result.length > 0 ? result[0].total : 0;
-        };
-
-        // 4. Xóa ngân sách
-        const deleteBudget = async (budget_id, user_id) => {
-            const result = await Budget.deleteOne({
-                _id: new mongoose.Types.ObjectId(budget_id),
-                user_id: new mongoose.Types.ObjectId(user_id)
-            });
-            return result.deletedCount > 0;
-        };
-
-        module.exports = {
-            upsertBudget,
-            getBudgetsAmountPeriod,
-            getBudgetAmountByDateRange,
-            deleteBudget
-        };
 };
 
 // 3. Lấy tổng ngân sách theo khoảng thời gian
