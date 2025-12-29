@@ -6,7 +6,7 @@ const createReminder = async (req, res) => {
     const { title, message, due_date, frequency} = req.body;
 
     if (!title || !due_date || !frequency) {
-        return res.status(400).json({ message: 'Thiếu dữ liệu bắt buộc (title, dueDate, frequency).'});
+        return res.status(400).json({ message: 'Thiếu dữ liệu bắt buộc (title, due_date, frequency).'});
     }
 
     try {

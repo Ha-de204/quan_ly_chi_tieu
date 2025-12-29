@@ -2,12 +2,12 @@ const Reminder = require('../models/Reminder');
 const mongoose = require('mongoose');
 
 // 1. Tạo lời nhắc mới
-const createReminder = async (user_id, title, message, dueDate, frequency) => {
+const createReminder = async (user_id, title, message, due_date, frequency) => {
     const newReminder = new Reminder({
         user_id: new mongoose.Types.ObjectId(user_id),
         title,
         message: message || null,
-        due_date: dueDate,
+        due_date: due_date,
         frequency,
         is_enabled: true
     });
@@ -32,7 +32,7 @@ const getReminderById = async (reminder_id, user_id) => {
 };
 
 // 4. Cập nhật lời nhắc
-const updateReminder = async (reminder_id, user_id, title, message, dueDate, frequency, isEnabled) => {
+const updateReminder = async (reminder_id, user_id, title, message, due_date, frequency, is_enabled) => {
    try {
     const result = await Reminder.updateOne(
             {
@@ -43,9 +43,9 @@ const updateReminder = async (reminder_id, user_id, title, message, dueDate, fre
                 $set: {
                     title: title,
                     message: message || null,
-                    due_date: dueDate,
+                    due_date: due_date,
                     frequency: frequency,
-                    is_enabled: isEnabled,
+                    is_enabled: is_enabled,
                 }
             }
         );
