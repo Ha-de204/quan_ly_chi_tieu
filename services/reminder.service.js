@@ -33,21 +33,28 @@ const getReminderById = async (reminder_id, user_id) => {
 
 // 4. Cập nhật lời nhắc
 const updateReminder = async (reminder_id, user_id, title, message, dueDate, frequency, isEnabled) => {
+   try {
     const result = await Reminder.updateOne(
-        {
-            _id: new mongoose.Types.ObjectId(reminder_id),
-            user_id: new mongoose.Types.ObjectId(user_id)
-        },
-        {
-            title,
-            message: message || null,
-            due_date: dueDate,
-            frequency,
-            is_enabled: isEnabled
-        }
-    );
-
-    return result.modifiedCount > 0;
+            {
+                _id: new mongoose.Types.ObjectId(reminder_id),
+                user_id: new mongoose.Types.ObjectId(user_id)
+            },
+            {
+                $set: {
+                    title: title,
+                    message: message || null,
+                    due_date: dueDate,
+                    frequency: frequency,
+                    is_enabled: isEnabled,
+                    updated_at: Date.now()
+                }
+            }
+        );
+        return result.modifiedCount > 0;
+   } catch (error) {
+      console.error("Lỗi tại Service updateReminder:", error);
+      throw error;
+   }
 };
 
 // 5. Xóa lời nhắc
