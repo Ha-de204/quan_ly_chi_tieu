@@ -17,10 +17,6 @@ const createReminder = async (req, res) => {
             due_date,
             frequency
         );
-
-        if (!updated) {
-           return res.status(404).json({ message: 'Không tìm thấy lời nhắc để cập nhật.' });
-        }
         res.status(201).json({
             reminder_id: reminderId,
             message: 'Tạo lời nhắc thành công.'
