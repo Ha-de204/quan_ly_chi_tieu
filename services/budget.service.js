@@ -18,6 +18,10 @@ const upsertBudget = async (user_id, category_id, amount, period) => {
 
 // 2. Lấy ngân sách và số tiền đã chi tiêu
 const getBudgetsAmountPeriod = async (user_id, period) => {
+    const [year, month] = period.split('-').map(Number);
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59);
+
     const budgets = await Budget.aggregate([
         { $match: {
             user_id: new mongoose.Types.ObjectId(user_id),
@@ -43,6 +47,8 @@ const getBudgetsAmountPeriod = async (user_id, period) => {
                                 { $eq: ['$category_id', '$$catId'] },
                                 { $eq: ['$user_id', '$$uId'] },
                                 { $eq: ['$type', 'expense'] },
+                                { $gte: ['$date', startDate] },
+                                { $lte: ['$date', endDate] }
                             ]
                         }
                     }}
