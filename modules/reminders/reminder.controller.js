@@ -3,10 +3,10 @@ const reminderService = require('../../services/reminder.service');
 const createReminder = async (req, res) => {
     //const user_id = req.user_id;
     const user_id = "658123456789012345678901";
-    const { title, message, dueDate, frequency } = req.body;
+    const { title, message, due_date, frequency} = req.body;
 
-    if (!title || !dueDate || !frequency) {
-        return res.status(400).json({ message: 'Thiếu dữ liệu bắt buộc (title, dueDate, frequency).' });
+    if (!title || !due_date || !frequency) {
+        return res.status(400).json({ message: 'Thiếu dữ liệu bắt buộc (title, dueDate, frequency).'});
     }
 
     try {
@@ -14,10 +14,13 @@ const createReminder = async (req, res) => {
             user_id,
             title,
             message,
-            dueDate,
+            due_date,
             frequency
         );
 
+        if (!updated) {
+           return res.status(404).json({ message: 'Không tìm thấy lời nhắc để cập nhật.' });
+        }
         res.status(201).json({
             reminder_id: reminderId,
             message: 'Tạo lời nhắc thành công.'
@@ -73,10 +76,10 @@ const updateReminder = async (req, res) => {
     //const user_id = req.user_id;
     const user_id = "658123456789012345678901";
     const reminderId = req.params.id; // Chỉnh sửa: Bỏ parseInt
-    const { title, message, dueDate, frequency, isEnabled } = req.body;
+    const { title, message, due_date, frequency, is_enabled } = req.body;
 
-    if (!reminderId || reminderId.length !== 24 || !title || !dueDate || !frequency || isEnabled === undefined) {
-        return res.status(400).json({ message: 'Dữ liệu cập nhật hoặc ID lời nhắc không hợp lệ.' });
+    if (!reminderId || reminderId.length !== 24 || !title || !due_date || !frequency || is_enabled === undefined) {
+        return res.status(400).json({ message: 'Dữ liệu cập nhật hoặc ID lời nhắc không hợp lệ.', received: req.body});
     }
 
     try {
@@ -85,9 +88,9 @@ const updateReminder = async (req, res) => {
             user_id,
             title,
             message,
-            dueDate,
+            due_date,
             frequency,
-            isEnabled
+            is_enabled
         );
 
         if (!updated) {

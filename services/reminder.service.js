@@ -46,7 +46,6 @@ const updateReminder = async (reminder_id, user_id, title, message, dueDate, fre
                     due_date: dueDate,
                     frequency: frequency,
                     is_enabled: isEnabled,
-                    updated_at: Date.now()
                 }
             }
         );
