@@ -48,7 +48,11 @@ const getBudgetsAmountPeriod = async (user_id, period) => {
                                 { $eq: [{ $toString: '$user_id' }, { $toString: '$$uId' }] },
                                 { $eq: ['$type', 'expense'] },
                                 { $gte: ['$date', startDate] },
-                                { $lte: ['$date', endDate] }
+                                { $lte: ['$date', endDate] },
+                                { $or: [
+                                   { $eq: ['$$catId', new mongoose.Types.ObjectId("000000000000000000000000")] },
+                                   { $eq: ['$category_id', '$$catId']
+                                ]}
                             ]
                         }
                     }}
