@@ -44,8 +44,8 @@ const getBudgetsAmountPeriod = async (user_id, period) => {
                     { $match: {
                         $expr: {
                             $and: [
-                                { $eq: ['$category_id', '$$catId'] },
-                                { $eq: ['$user_id', '$$uId'] },
+                                { $eq: [{ $toString: '$category_id' }, { $toString: '$$catId' }] },
+                                { $eq: [{ $toString: '$user_id' }, { $toString: '$$uId' }] },
                                 { $eq: ['$type', 'expense'] },
                                 { $gte: ['$date', startDate] },
                                 { $lte: ['$date', endDate] }
