@@ -34,23 +34,27 @@ const upsertBudget = async (req, res) => {
 };
 
 const getBudgets = async (req, res) => {
-    //const user_id = req.user_id;
+    // const user_id = req.user_id;
     const user_id = "658123456789012345678901";
     const period = req.query.period;
-
-    const defaultPeriod = period || new Date().toISOString().substring(0, 7);
+    const finalPeriod = period || new Date().toISOString().substring(0, 7);
 
     try {
-        const budgets = await budgetService.getBudgetsAmountPeriod(user_id, defaultPeriod);
-        const cleanBudgets = budgets.map(b => ({
-                    ...b.toObject ? b.toObject() : b,
-                    category_id: b.category_id.toString(),
-                    _id: b._id.toString()
-        }));
-        res.status(200).json(budgets);
+        const budgets = await budgetService.getBudgetsAmountPeriod(user_id, finalPeriod);
+
+        const cleanBudgets = budgets.map(b => {
+            const item = b.toObject ? b.toObject() : b;
+            return {
+                ...item,
+                category_id: item.category_id ? item.category_id.toString() : "000000000000000000000000",
+                budget_id: (item.budget_id || item._id || "").toString()
+            };
+        });
+
+        res.status(200).json(cleanBudgets);
     } catch (error) {
         console.error('Lỗi lấy danh sách ngân sách:', error);
-        res.status(500).json({ message: 'Lỗi máy chủ nội bộ khi lấy danh sách ngân sách.' });
+        res.status(500).json({ message: 'Lỗi máy chủ nội bộ.' });
     }
 };
 
