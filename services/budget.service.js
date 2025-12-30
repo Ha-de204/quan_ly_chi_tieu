@@ -22,13 +22,6 @@ const getBudgetsAmountPeriod = async (user_id, period) => {
     const startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0));
     const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
 
-    console.log("--- DEBUG BUDGET ---");
-    console.log("User ID:", user_id);
-    console.log("Request Query Period:", period);
-    console.log("Start Date (UTC):", startDate.toISOString());
-    console.log("End Date (UTC):", endDate.toISOString());
-    console.log("--------------------");
-
     const budgets = await Budget.aggregate([
         {
             $match: {
@@ -56,8 +49,8 @@ const getBudgetsAmountPeriod = async (user_id, period) => {
                                 $and: [
                                     { $eq: ['$user_id', '$$uId'] },
                                     { $eq: ['$type', 'expense'] },
-                                    { $gte: [{ $toDate: '$date' }, startDate] },
-                                    { $lte: [{ $toDate: '$date' }, endDate] },
+                                    { $gte: ['$date', startDate] },
+                                    { $lte: ['$date', endDate] },
                                     {
                                         $or: [
                                            { $eq: ['$$catId', new mongoose.Types.ObjectId("000000000000000000000000")] },
