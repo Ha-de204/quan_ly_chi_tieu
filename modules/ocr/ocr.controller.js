@@ -42,7 +42,7 @@ const extractDate = (text) => {
 const suggestCategory = (text) => {
   const content = text.toLowerCase();
   const categories = {
-    'Ăn uống': ['coffee', 'highlands', 'phúc long', 'starbucks', 'nhà hàng', 'trà sữa', 'mì', 'cơm', 'ăn sáng', 'nước uống'],
+    'Đồ ăn': ['coffee', 'highlands', 'phúc long', 'starbucks', 'nhà hàng', 'trà sữa', 'mì', 'cơm', 'ăn sáng', 'nước uống'],
     'Di chuyển': ['grab', 'be', 'xăng', 'gas', 'taxi', 'vận tải', 'phí gửi xe'],
     'Mua sắm': ['siêu thị', 'mart', 'mall', 'shopee', 'lazada', 'tiki', 'winmart', 'circle k', 'tạp hóa'],
     'Giải trí': ['cinema', 'rạp chiếu phim', 'cgv', 'lotte', 'vé xem phim', 'karaoke'],
