@@ -26,23 +26,12 @@ const extractAmount = (text) => {
  * Hàm hỗ trợ trích xuất ngày tháng
  */
 const extractDate = (text) => {
-  const dateRegex = /(\d{1,2})\s*[\/\.\-]\s*(\d{1,2})\s*[\/\.\-]\s*(\d{2,4})/;
-
+  // Bắt các định dạng dd/mm/yyyy, dd-mm-yyyy, dd.mm.yyyy
+  const dateRegex = /(\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{2,4})/;
   const match = text.match(dateRegex);
+  if (match) return match[0];
 
-  if (match) {
-    let day = match[1].padStart(2, '0');
-    let month = match[2].padStart(2, '0');
-    let year = match[3];
-
-    if (year.length === 2) {
-      year = '20' + year;
-    }
-
-    return `${year}-${month}-${day}`;
-  }
-
-  return new Date().toISOString().split('T')[0];
+  return new Date().toISOString();
 };
 
 /**
@@ -91,9 +80,6 @@ exports.scanReceipt = async (req, res) => {
     // Tên cửa hàng: Lấy dòng đầu tiên không rỗng và có độ dài > 3 ký tự
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 3);
     const title = lines.length > 0 ? lines[0] : 'Hóa đơn mới';
-    title = title
-      .replace(/^[^a-zA-Z0-9À-ỹ]+|[^a-zA-Z0-9À-ỹ]+$/g, '')
-      .replace(/\s+/g, ' ');
 
     // 3. Xóa file ảnh tạm sau khi xử lý để giải phóng bộ nhớ server
     if (fs.existsSync(imagePath)) {
