@@ -6,7 +6,7 @@ const path = require('path');
  * Hàm hỗ trợ trích xuất số tiền (Lấy số lớn nhất thường là tổng thanh toán)
  */
 const extractAmount = (text) => {
-  // Loại bỏ khoảng trắng nằm giữa các con số (tránh lỗi scan 100 000 thành hai số riêng biệt)
+  // Loại bỏ khoảng trắng nằm giữa các con số
   const cleanText = text.replace(/(?<=\d)\s+(?=\d)/g, '');
 
   // Regex tìm các cụm số có dấu phân cách nghìn là (.) hoặc (,)
@@ -15,11 +15,9 @@ const extractAmount = (text) => {
 
   const numbers = matches
     .map(m => {
-      // Chuyển đổi định dạng: bỏ dấu phân cách để parse thành số thực
-      // Ví dụ: "125.000" -> 125000
       return parseFloat(m.replace(/[.,]/g, ''));
     })
-    .filter(n => n >= 1000 && n < 100000000); // Lọc số tiền hợp lý (từ 1k đến 100 triệu)
+    .filter(n => n >= 1000 && n < 100000000);
 
   return numbers.length > 0 ? Math.max(...numbers) : 0;
 };
@@ -28,12 +26,23 @@ const extractAmount = (text) => {
  * Hàm hỗ trợ trích xuất ngày tháng
  */
 const extractDate = (text) => {
-  // Bắt các định dạng dd/mm/yyyy, dd-mm-yyyy, dd.mm.yyyy
-  const dateRegex = /(\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{2,4})/;
-  const match = text.match(dateRegex);
-  if (match) return match[0];
+  const dateRegex = /(\d{1,2})\s*[\/\.\-]\s*(\d{1,2})\s*[\/\.\-]\s*(\d{2,4})/;
 
-  return new Date().toISOString(); // Trả về ngày hiện tại nếu không tìm thấy
+  const match = text.match(dateRegex);
+
+  if (match) {
+    let day = match[1].padStart(2, '0');
+    let month = match[2].padStart(2, '0');
+    let year = match[3];
+
+    if (year.length === 2) {
+      year = '20' + year;
+    }
+
+    return `${year}-${month}-${day}`;
+  }
+
+  return new Date().toISOString().split('T')[0];
 };
 
 /**
@@ -55,9 +64,6 @@ const suggestCategory = (text) => {
   return 'Khác';
 };
 
-/**
- * Controller chính xử lý Scan Receipt
- */
 exports.scanReceipt = async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: 'Vui lòng tải lên hình ảnh hóa đơn.' });
@@ -68,7 +74,7 @@ exports.scanReceipt = async (req, res) => {
   try {
     console.time("OCR_Duration");
 
-    // 1. Chạy Tesseract OCR (Sử dụng song ngữ Việt - Anh để tăng độ chính xác)
+    // 1. Chạy Tesseract OCR
     const { data: { text } } = await tesseract.recognize(
       imagePath,
       'vie+eng',
@@ -85,6 +91,9 @@ exports.scanReceipt = async (req, res) => {
     // Tên cửa hàng: Lấy dòng đầu tiên không rỗng và có độ dài > 3 ký tự
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 3);
     const title = lines.length > 0 ? lines[0] : 'Hóa đơn mới';
+    title = title
+      .replace(/^[^a-zA-Z0-9À-ỹ]+|[^a-zA-Z0-9À-ỹ]+$/g, '')
+      .replace(/\s+/g, ' ');
 
     // 3. Xóa file ảnh tạm sau khi xử lý để giải phóng bộ nhớ server
     if (fs.existsSync(imagePath)) {
@@ -101,7 +110,7 @@ exports.scanReceipt = async (req, res) => {
       note: 'Dữ liệu quét tự động',
       date: date,
       category_name: categoryName,
-      raw_text: text // Gửi kèm text thô nếu bạn muốn debug ở Client
+      raw_text: text
     });
 
   } catch (error) {
