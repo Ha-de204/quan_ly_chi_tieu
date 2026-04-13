@@ -1,58 +1,118 @@
 const tesseract = require('tesseract.js');
+const fs = require('fs');
+const path = require('path');
 
+/**
+ * Hàm hỗ trợ trích xuất số tiền (Lấy số lớn nhất thường là tổng thanh toán)
+ */
+const extractAmount = (text) => {
+  // Loại bỏ khoảng trắng nằm giữa các con số (tránh lỗi scan 100 000 thành hai số riêng biệt)
+  const cleanText = text.replace(/(?<=\d)\s+(?=\d)/g, '');
+
+  // Regex tìm các cụm số có dấu phân cách nghìn là (.) hoặc (,)
+  const amountRegex = /\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)?/g;
+  const matches = cleanText.match(amountRegex) || [];
+
+  const numbers = matches
+    .map(m => {
+      // Chuyển đổi định dạng: bỏ dấu phân cách để parse thành số thực
+      // Ví dụ: "125.000" -> 125000
+      return parseFloat(m.replace(/[.,]/g, ''));
+    })
+    .filter(n => n >= 1000 && n < 100000000); // Lọc số tiền hợp lý (từ 1k đến 100 triệu)
+
+  return numbers.length > 0 ? Math.max(...numbers) : 0;
+};
+
+/**
+ * Hàm hỗ trợ trích xuất ngày tháng
+ */
+const extractDate = (text) => {
+  // Bắt các định dạng dd/mm/yyyy, dd-mm-yyyy, dd.mm.yyyy
+  const dateRegex = /(\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{2,4})/;
+  const match = text.match(dateRegex);
+  if (match) return match[0];
+
+  return new Date().toISOString(); // Trả về ngày hiện tại nếu không tìm thấy
+};
+
+/**
+ * Hàm gợi ý danh mục dựa trên từ khóa trong text
+ */
+const suggestCategory = (text) => {
+  const content = text.toLowerCase();
+  const categories = {
+    'Ăn uống': ['coffee', 'highlands', 'phúc long', 'starbucks', 'nhà hàng', 'trà sữa', 'mì', 'cơm', 'ăn sáng', 'nước uống'],
+    'Di chuyển': ['grab', 'be', 'xăng', 'gas', 'taxi', 'vận tải', 'phí gửi xe'],
+    'Mua sắm': ['siêu thị', 'mart', 'mall', 'shopee', 'lazada', 'tiki', 'winmart', 'circle k', 'tạp hóa'],
+    'Giải trí': ['cinema', 'rạp chiếu phim', 'cgv', 'lotte', 'vé xem phim', 'karaoke'],
+    'Sức khỏe': ['nhà thuốc', 'pharmacity', 'long châu', 'bệnh viện', 'phòng khám']
+  };
+
+  for (const [name, keys] of Object.entries(categories)) {
+    if (keys.some(key => content.includes(key))) return name;
+  }
+  return 'Khác';
+};
+
+/**
+ * Controller chính xử lý Scan Receipt
+ */
 exports.scanReceipt = async (req, res) => {
   if (!req.file) {
-    return res.status(400).json({ message: 'No file uploaded.' });
+    return res.status(400).json({ message: 'Vui lòng tải lên hình ảnh hóa đơn.' });
   }
 
-  try {
-    console.time("OCR");
+  const imagePath = req.file.path;
 
+  try {
+    console.time("OCR_Duration");
+
+    // 1. Chạy Tesseract OCR (Sử dụng song ngữ Việt - Anh để tăng độ chính xác)
     const { data: { text } } = await tesseract.recognize(
-      req.file.path,
-      'vie'
+      imagePath,
+      'vie+eng',
+      {
+        logger: m => console.log(m.status + ': ' + Math.round(m.progress * 100) + '%')
+      }
     );
 
-    console.timeEnd("OCR");
+    // 2. Trích xuất thông tin bằng Regex
+    const amount = extractAmount(text);
+    const date = extractDate(text);
+    const categoryName = suggestCategory(text);
 
-    // Logic to parse the extracted text and identify amount, title, date, etc.
-    // This is a simplified example. We'll need to use regex and patterns.
+    // Tên cửa hàng: Lấy dòng đầu tiên không rỗng và có độ dài > 3 ký tự
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 3);
+    const title = lines.length > 0 ? lines[0] : 'Hóa đơn mới';
 
-    const lines = text.split('\n');
+    // 3. Xóa file ảnh tạm sau khi xử lý để giải phóng bộ nhớ server
+    if (fs.existsSync(imagePath)) {
+      fs.unlinkSync(imagePath);
+    }
 
-    let amount = null;
-    let date = null;
-    let title = lines.length > 0 ? lines[0] : 'N/A'; 
-    let note = 'N/A';
-    let category_name = 'Khác';
+    console.timeEnd("OCR_Duration");
 
-    const amountRegex = /(?:T\u1ed5ng c\u1ed9ng|Total|Thanh to\u00e1n)\s*[: ]?\s*([\d., ]+)/i;
-    const dateRegex = /(\d{2}[\/\.-]\d{2}[\/\.-]\d{4})/;
-
-    lines.forEach(line => {
-      const amountMatch = line.match(amountRegex);
-      if (amountMatch && !amount) {
-        amount = parseFloat(amountMatch[1].replace(/[., ]/g, ''));
-      }
-
-      const dateMatch = line.match(dateRegex);
-      if (dateMatch && !date) {
-        date = dateMatch[1];
-      }
-    });
-    
-
+    // 4. Trả kết quả về Frontend
     res.status(200).json({
-      amount: amount || 0,
+      amount: amount,
       type: 'expense',
       title: title,
-      note: text, 
-      date: date || new Date().toISOString(),
-      category_name: category_name,
+      note: 'Dữ liệu quét tự động',
+      date: date,
+      category_name: categoryName,
+      raw_text: text // Gửi kèm text thô nếu bạn muốn debug ở Client
     });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error processing image.', error: error.message });
+    console.error('Lỗi xử lý OCR:', error);
+
+    // Đảm bảo xóa file ngay cả khi gặp lỗi
+    if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+
+    res.status(500).json({
+      message: 'Không thể xử lý hình ảnh.',
+      error: error.message
+    });
   }
 };
