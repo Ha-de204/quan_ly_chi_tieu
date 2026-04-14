@@ -156,36 +156,25 @@ exports.scanReceipt = async (req, res) => {
     processedPath = await preprocessImage(originalPath);
 
     // 1. Chạy Tesseract OCR
-    const { data: { text: text1 } } = await tesseract.recognize(
+    const { data: { text } } = await tesseract.recognize(
       processedPath,
       'vie+eng',
       {
         logger: m => console.log(m.status + ': ' + Math.round(m.progress * 100) + '%'),
-        tessedit_pageseg_mode: '6',
+        tessedit_pageseg_mode: 6,
         tessedit_char_whitelist:
           '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơ.,:/- ',
       }
     );
+    console.log("--------- DỮ LIỆU THÔ TESSERACT ĐỌC ĐƯỢC ---------");
+    console.log(text);
+    console.log("--------------------------------------------------");
 
-    const { data: { text: text2 } } = await tesseract.recognize(
-      processedPath,
-      'eng',
-      {
-        tessedit_pageseg_mode: 11,
-        tessedit_char_whitelist: '0123456789.,',
-      }
-    );
+    const finalText = cleanText(text);
 
-    const cleaned1 = cleanText(text1);
-    const cleaned2 = cleanText(text2);
-    const finalText = cleaned1 + "\n" + cleaned2;
-
-    console.log("------ OCR TEXT 1 ------");
-    console.log(text1);
-    console.log("------ OCR TEXT 2 ------");
-    console.log(text2);
-    console.log("------ FINAL TEXT ------");
+    console.log("--------- DỮ LIỆU THÔ SAU KHI LÀM SẠCH ---------");
     console.log(finalText);
+    console.log("--------------------------------------------------");
 
     // 2. Trích xuất thông tin bằng Regex
     const amount = extractAmount(finalText);
