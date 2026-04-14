@@ -62,10 +62,12 @@ const extractDate = (text) => {
       // Chuẩn hóa năm 2 chữ số thành 4 chữ số
       if (year.length === 2) year = '20' + year;
 
-      return `${day}-${month}-${year}`;
+      const result = `${year}-${month}-${date}`;
+      console.log("Date trích xuất được:", result);
+      return result;
     }
 
-  return new Date().toISOString();
+  return null;
 };
 
 /**
