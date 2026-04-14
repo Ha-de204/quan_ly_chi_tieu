@@ -3,7 +3,33 @@ const fs = require('fs');
 const path = require('path');
 
 /**
- * Hàm hỗ trợ trích xuất số tiền (Lấy số lớn nhất thường là tổng thanh toán)
+ * Hàm hỗ trợ trích xuất title
+ */
+const extractTitle = (text) => {
+  const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 2);
+
+  // 1. Ưu tiên: Tìm từ khóa đặc trưng của cửa hàng trong toàn bộ văn bản
+  const rawTextLower = text.toLowerCase();
+  if (rawTextLower.includes('thanhdo') || rawTextLower.includes('thanh do')) return "Thanh Đô Mart";
+  if (rawTextLower.includes('winmart')) return "WinMart";
+  if (rawTextLower.includes('circle k')) return "Circle K";
+
+  // 2. Ưu tiên 2: Lấy dòng có chữ hoa dài nhất ở 5 dòng đầu tiên
+  const topLines = lines.slice(0, 5);
+  for (let line of topLines) {
+    const cleanLine = line.replace(/[^a-zA-Z0-9À-ỹ\s]/g, '').trim();
+    if (cleanLine.length > 5 && cleanLine === cleanLine.toUpperCase()) {
+      return cleanLine;
+    }
+  }
+
+  // 3. Cuối cùng mới lấy dòng đầu tiên hợp lệ
+  return lines.length > 0 ? lines[0].replace(/[^a-zA-Z0-9À-ỹ\s]/g, '').trim() : "Hóa đơn mới";
+};
+
+
+/**
+ * Hàm hỗ trợ trích xuất số tiền
  */
 const extractAmount = (text) => {
   // Loại bỏ khoảng trắng nằm giữa các con số
@@ -117,9 +143,7 @@ exports.scanReceipt = async (req, res) => {
     const date = extractDate(text);
     const categoryName = suggestCategory(text);
 
-    // Tên cửa hàng: Lấy dòng đầu tiên không rỗng và có độ dài > 3 ký tự
-    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 3);
-    const title = lines.length > 0 ? lines[0] : 'Hóa đơn mới';
+    const title = extractTitle(text);
 
     // 3. Xóa file ảnh tạm sau khi xử lý để giải phóng bộ nhớ server
     if (fs.existsSync(imagePath)) {
