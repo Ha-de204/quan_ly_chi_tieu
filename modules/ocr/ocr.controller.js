@@ -11,24 +11,13 @@ const preprocessImage = async (inputPath) => {
 
     await sharp(inputPath)
         .grayscale()
+        .resize(2000)
         .normalize()
         .sharpen()
-        .median(1)
-        .modulate({ brightness: 1.1, contrast: 1.5 })
-        .threshold(130)
+        .threshold(160)
         .toFile(outputPath);
     return outputPath;
 }
-
-const cleanText = (text) => {
-  return text
-    .replace(/[\/]/g, '0')
-    .replace(/[O]/g, '0')
-    .replace(/[lI]/g, '1')
-    .replace(/[^\x00-\x7FÀ-ỹ\n]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-};
 
 /**
  * Hàm hỗ trợ trích xuất title
@@ -161,26 +150,19 @@ exports.scanReceipt = async (req, res) => {
       'vie+eng',
       {
         logger: m => console.log(m.status + ': ' + Math.round(m.progress * 100) + '%'),
-        tessedit_pageseg_mode: 6,
-        tessedit_char_whitelist:
-          '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơ.,:/- ',
+        tessedit_pageseg_mode: '6'
       }
     );
+
     console.log("--------- DỮ LIỆU THÔ TESSERACT ĐỌC ĐƯỢC ---------");
     console.log(text);
     console.log("--------------------------------------------------");
 
-    const finalText = cleanText(text);
-
-    console.log("--------- DỮ LIỆU THÔ SAU KHI LÀM SẠCH ---------");
-    console.log(finalText);
-    console.log("--------------------------------------------------");
-
     // 2. Trích xuất thông tin bằng Regex
-    const amount = extractAmount(finalText);
-    const date = extractDate(finalText);
-    const categoryName = suggestCategory(finalText);
-    const title = extractTitle(finalText);
+    const amount = extractAmount(text);
+    const date = extractDate(text);
+    const categoryName = suggestCategory(text);
+    const title = extractTitle(text);
 
     // 3. Xóa file ảnh tạm sau khi xử lý để giải phóng bộ nhớ server
     if (fs.existsSync(originalPath)) fs.unlinkSync(originalPath);
