@@ -11,13 +11,24 @@ const preprocessImage = async (inputPath) => {
 
     await sharp(inputPath)
         .grayscale()
-        .resize(2500)
         .normalize()
         .sharpen()
-        .threshold(160)
+        .median(1)
+        .modulate({ brightness: 1.1, contrast: 1.5 })
+        .threshold(130)
         .toFile(outputPath);
     return outputPath;
 }
+
+const cleanText = (text) => {
+  return text
+    .replace(/[\/]/g, '0')
+    .replace(/[O]/g, '0')
+    .replace(/[lI]/g, '1')
+    .replace(/[^\x00-\x7FÀ-ỹ\n]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+};
 
 /**
  * Hàm hỗ trợ trích xuất title
@@ -145,24 +156,42 @@ exports.scanReceipt = async (req, res) => {
     processedPath = await preprocessImage(originalPath);
 
     // 1. Chạy Tesseract OCR
-    const { data: { text } } = await tesseract.recognize(
+    const { data: { text: text1 } } = await tesseract.recognize(
       processedPath,
       'vie+eng',
       {
         logger: m => console.log(m.status + ': ' + Math.round(m.progress * 100) + '%'),
-        tessedit_pageseg_mode: '6'
+        tessedit_pageseg_mode: '6',
+        tessedit_char_whitelist:
+          '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơ.,:/- ',
       }
     );
 
-    console.log("--------- DỮ LIỆU THÔ TESSERACT ĐỌC ĐƯỢC ---------");
-    console.log(text);
-    console.log("--------------------------------------------------");
+    const { data: { text: text2 } } = await tesseract.recognize(
+      processedPath,
+      'eng',
+      {
+        tessedit_pageseg_mode: 11,
+        tessedit_char_whitelist: '0123456789.,',
+      }
+    );
+
+    const cleaned1 = cleanText(text1);
+    const cleaned2 = cleanText(text2);
+    const finalText = cleaned1 + "\n" + cleaned2;
+
+    console.log("------ OCR TEXT 1 ------");
+    console.log(text1);
+    console.log("------ OCR TEXT 2 ------");
+    console.log(text2);
+    console.log("------ FINAL TEXT ------");
+    console.log(finalText);
 
     // 2. Trích xuất thông tin bằng Regex
-    const amount = extractAmount(text);
-    const date = extractDate(text);
-    const categoryName = suggestCategory(text);
-    const title = extractTitle(text);
+    const amount = extractAmount(finalText);
+    const date = extractDate(finalText);
+    const categoryName = suggestCategory(finalText);
+    const title = extractTitle(finalText);
 
     // 3. Xóa file ảnh tạm sau khi xử lý để giải phóng bộ nhớ server
     if (fs.existsSync(originalPath)) fs.unlinkSync(originalPath);
@@ -178,7 +207,6 @@ exports.scanReceipt = async (req, res) => {
       note: 'Dữ liệu quét tự động',
       date: date,
       category_name: categoryName,
-      raw_text: text
     });
 
   } catch (error) {
