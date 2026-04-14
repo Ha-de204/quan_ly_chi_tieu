@@ -62,7 +62,7 @@ const extractDate = (text) => {
       // Chuẩn hóa năm 2 chữ số thành 4 chữ số
       if (year.length === 2) year = '20' + year;
 
-      const result = `${year}-${month}-${date}`;
+      const result = `${year}-${month}-${day}`;
       console.log("Date trích xuất được:", result);
       return result;
     }
