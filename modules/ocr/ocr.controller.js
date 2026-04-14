@@ -27,9 +27,18 @@ const extractAmount = (text) => {
  */
 const extractDate = (text) => {
   // Bắt các định dạng dd/mm/yyyy, dd-mm-yyyy, dd.mm.yyyy
-  const dateRegex = /(\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{2,4})/;
+  const dateRegex = /(\d{1,2})\s*[\/\.\-]\s*(\d{1,2})\s*[\/\.\-]\s*(\d{2,4})/;
   const match = text.match(dateRegex);
-  if (match) return match[0];
+  if (match) {
+      let day = match[1].padStart(2, '0');
+      let month = match[2].padStart(2, '0');
+      let year = match[3];
+
+      // Chuẩn hóa năm 2 chữ số thành 4 chữ số
+      if (year.length === 2) year = '20' + year;
+
+      return `${year}-${month}-${day}`;
+    }
 
   return new Date().toISOString();
 };
