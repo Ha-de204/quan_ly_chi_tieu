@@ -1,6 +1,23 @@
 const tesseract = require('tesseract.js');
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp')
+
+/**
+ * Tiền xử lý ảnh
+ */
+const preprocessImage = async (inputPath) => {
+    const outputPath = path.join(path.dirname(inputPath), 'processed_' + path.basename(inputPath));
+
+    await sharp(inputPath)
+        .grayscale()
+        .resize(2000)
+        .normalize()
+        .sharpen()
+        .threshold(160)
+        .toFile(outputPath);
+    return outputPath;
+}
 
 /**
  * Hàm hỗ trợ trích xuất title
@@ -102,7 +119,7 @@ const extractDate = (text) => {
 const suggestCategory = (text) => {
   const content = text.toLowerCase();
   const categories = {
-    'Đồ ăn': ['coffee', 'highlands', 'phúc long', 'starbucks', 'nhà hàng', 'trà sữa', 'mì', 'cơm', 'ăn sáng', 'nước uống', 'gà', 'cá', 'thịt', 'tôm', 'chả', 'ốc', 'xúc xích', 'rau'],
+    'Đồ ăn': ['coffee', 'highlands', 'phúc long', 'starbucks', 'nhà hàng', 'trà sữa', 'mì', 'cơm', 'ăn sáng', 'nước uống', 'gà', 'cá', 'thịt', 'tôm', 'chả', 'ốc', 'xúc xích', 'rau', 'món'],
     'Di chuyển': ['grab', 'be', 'xăng', 'gas', 'taxi', 'vận tải', 'phí gửi xe'],
     'Mua sắm': ['siêu thị', 'mart', 'mall', 'shopee', 'lazada', 'tiki', 'winmart', 'circle k', 'tạp hóa'],
     'Giải trí': ['cinema', 'rạp chiếu phim', 'cgv', 'lotte', 'vé xem phim', 'karaoke'],
@@ -120,17 +137,20 @@ exports.scanReceipt = async (req, res) => {
     return res.status(400).json({ message: 'Vui lòng tải lên hình ảnh hóa đơn.' });
   }
 
-  const imagePath = req.file.path;
+  const originalPath = req.file.path;
+  let processedPath = null;
 
   try {
     console.time("OCR_Duration");
+    processedPath = await preprocessImage(originalPath);
 
     // 1. Chạy Tesseract OCR
     const { data: { text } } = await tesseract.recognize(
-      imagePath,
+      processedPath,
       'vie+eng',
       {
-        logger: m => console.log(m.status + ': ' + Math.round(m.progress * 100) + '%')
+        logger: m => console.log(m.status + ': ' + Math.round(m.progress * 100) + '%'),
+        tessedit_pageseg_mode: '6'
       }
     );
 
@@ -142,13 +162,11 @@ exports.scanReceipt = async (req, res) => {
     const amount = extractAmount(text);
     const date = extractDate(text);
     const categoryName = suggestCategory(text);
-
     const title = extractTitle(text);
 
     // 3. Xóa file ảnh tạm sau khi xử lý để giải phóng bộ nhớ server
-    if (fs.existsSync(imagePath)) {
-      fs.unlinkSync(imagePath);
-    }
+    if (fs.existsSync(originalPath)) fs.unlinkSync(originalPath);
+    if (fs.existsSync(processedPath)) fs.unlinkSync(processedPath);
 
     console.timeEnd("OCR_Duration");
 
@@ -167,7 +185,8 @@ exports.scanReceipt = async (req, res) => {
     console.error('Lỗi xử lý OCR:', error);
 
     // Đảm bảo xóa file ngay cả khi gặp lỗi
-    if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+    if (fs.existsSync(originalPath)) fs.unlinkSync(originalPath);
+    if (processedPath && fs.existsSync(processedPath)) fs.unlinkSync(processedPath);
 
     res.status(500).json({
       message: 'Không thể xử lý hình ảnh.',
