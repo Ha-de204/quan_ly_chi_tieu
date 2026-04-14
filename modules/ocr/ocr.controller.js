@@ -8,18 +8,43 @@ const path = require('path');
 const extractAmount = (text) => {
   // Loại bỏ khoảng trắng nằm giữa các con số
   const cleanText = text.replace(/(?<=\d)\s+(?=\d)/g, '');
+  const lines = cleanText.split('\n');
 
-  // Regex tìm các cụm số có dấu phân cách nghìn là (.) hoặc (,)
-  const amountRegex = /\d{1,3}(?:[.,]\d{3})*(?:[.,]\d+)?/g;
-  const matches = cleanText.match(amountRegex) || [];
+  const anchors = ['thanh toán', 'tổng cộng', 'tổng tiền', 'tiền mặt', 'tiền khách đưa', 'thành tiền'];
+  let potentialAmounts = [];
 
-  const numbers = matches
-    .map(m => {
-      return parseFloat(m.replace(/[.,]/g, ''));
-    })
-    .filter(n => n >= 1000 && n < 100000000);
+  for (let line of lines) {
+      const lowerLine = line.toLowerCase();
 
-  return numbers.length > 0 ? Math.max(...numbers) : 0;
+      // Kiểm tra xem dòng này có chứa từ khóa mục tiêu không
+      const hasAnchor = anchors.some(anchor => lowerLine.includes(anchor));
+
+      if (hasAnchor) {
+        const amountRegex = /\d{1,3}(?:[.,]\d{3})+(?:[.,]\d+)?/g;
+        const matches = line.match(amountRegex);
+
+        if (matches) {
+          matches.forEach(m => {
+            const val = parseFloat(m.replace(/[.,]/g, ''));
+            if (val >= 1000) potentialAmounts.push(val);
+          });
+        }
+      }
+    }
+
+    // 3. Nếu tìm thấy các số đi kèm từ khóa, lấy số lớn nhất trong nhóm đó
+    if (potentialAmounts.length > 0) {
+      return Math.max(...potentialAmounts);
+    }
+
+    // 4. PHƯƠNG ÁN DỰ PHÒNG (Nếu không thấy từ khóa)
+    // Lấy tất cả số tiền hợp lệ, nhưng thay vì lấy Max, hãy lấy số xuất hiện cuối cùng
+    const allMatches = cleanText.match(/\d{1,3}(?:[.,]\d{3})+(?:[.,]\d+)?/g) || [];
+    const allNumbers = allMatches
+      .map(m => parseFloat(m.replace(/[.,]/g, '')))
+      .filter(n => n >= 1000 && n < 10000000);
+
+    return allNumbers.length > 0 ? allNumbers[allNumbers.length - 1] : 0;
 };
 
 /**
@@ -37,7 +62,7 @@ const extractDate = (text) => {
       // Chuẩn hóa năm 2 chữ số thành 4 chữ số
       if (year.length === 2) year = '20' + year;
 
-      return `${year}-${month}-${day}`;
+      return `${day}-${month}-${year}`;
     }
 
   return new Date().toISOString();
