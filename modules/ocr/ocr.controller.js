@@ -11,7 +11,7 @@ const preprocessImage = async (inputPath) => {
 
     await sharp(inputPath)
         .grayscale()
-        .resize(2000)
+        .resize(2500)
         .normalize()
         .sharpen()
         .threshold(160)
@@ -27,7 +27,7 @@ const extractTitle = (text) => {
 
   // 1. Ưu tiên: Tìm từ khóa đặc trưng của cửa hàng trong toàn bộ văn bản
   const rawTextLower = text.toLowerCase();
-  if (rawTextLower.includes('thanhdo') || rawTextLower.includes('thanh do')) return "Thanh Đô Mart";
+  if (rawTextLower.includes('thanhdo') || rawTextLower.includes('thanh do')) return "Thành Đô Mart";
   if (rawTextLower.includes('winmart')) return "WinMart";
   if (rawTextLower.includes('circle k')) return "Circle K";
 
@@ -53,7 +53,7 @@ const extractAmount = (text) => {
   const cleanText = text.replace(/(?<=\d)\s+(?=\d)/g, '');
   const lines = cleanText.split('\n');
 
-  const anchors = ['thanh toán', 'tổng cộng', 'tổng tiền', 'tiền mặt', 'tiền khách đưa', 'thành tiền'];
+  const anchors = ['thanh toán', 'tổng cộng', 'tổng tiền', 'thành tiền', 'tiền hàng', 'tiền thanh toán'];
   let potentialAmounts = [];
 
   for (let line of lines) {
