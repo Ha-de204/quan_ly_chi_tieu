@@ -72,6 +72,10 @@ exports.scanReceipt = async (req, res) => {
       }
     );
 
+    console.log("--------- DỮ LIỆU THÔ TESSERACT ĐỌC ĐƯỢC ---------");
+    console.log(text);
+    console.log("--------------------------------------------------");
+
     // 2. Trích xuất thông tin bằng Regex
     const amount = extractAmount(text);
     const date = extractDate(text);
