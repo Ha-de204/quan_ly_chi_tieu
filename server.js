@@ -12,7 +12,6 @@ const budgetRoutes = require('./modules/budgets/budget.routes');
 const reminderRoutes = require('./modules/reminders/reminder.routes');
 const ocrRoutes = require('./modules/ocr/ocr.routes');
 const { connectDB } = require('./services/db.service');
-const { initWorker } = require('./tesseractWorker');
 
 const uploadDir = path.join(__dirname, 'uploads');
 
@@ -36,9 +35,7 @@ app.use('/api/ocr', ocrRoutes);
 
 const PORT = process.env.PORT || 5000;
 
-connectDB().then(async () => {
-    await initWorker();
-
+connectDB().then(() => {
     app.listen(PORT, () => {
         console.log(`Server chạy trên http://localhost:${PORT}`);
     });
