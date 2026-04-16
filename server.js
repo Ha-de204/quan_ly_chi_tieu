@@ -12,7 +12,7 @@ const budgetRoutes = require('./modules/budgets/budget.routes');
 const reminderRoutes = require('./modules/reminders/reminder.routes');
 const ocrRoutes = require('./modules/ocr/ocr.routes');
 const { connectDB } = require('./services/db.service');
-const { initWorker } = require('tesseractWorker');
+const { initWorker } = require('./tesseractWorker');
 
 const uploadDir = path.join(__dirname, 'uploads');
 
