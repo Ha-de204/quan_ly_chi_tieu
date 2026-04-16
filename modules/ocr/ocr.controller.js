@@ -2,7 +2,7 @@ const tesseract = require('tesseract.js');
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp')
-const { getWorker } = require('../tesseractWorker.js');
+const { getWorker } = require('../../tesseractWorker.js');
 
 /**
  * Tiền xử lý ảnh
