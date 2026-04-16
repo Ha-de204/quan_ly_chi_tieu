@@ -12,9 +12,9 @@ const preprocessImage = async (inputPath) => {
     await sharp(inputPath)
         .grayscale()
         .normalize()
+        .resize(2000)
         .sharpen()
-        .modulate({ brightness: 1.1, contrast: 1.4 })
-        .threshold(0)
+        .threshold(130)
         .toFile(outputPath);
     return outputPath;
 }
