@@ -2,6 +2,7 @@ const tesseract = require('tesseract.js');
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp')
+const { getWorker } = require('../../tesseractWorker');
 
 /**
  * Tiền xử lý ảnh
@@ -15,7 +16,6 @@ const preprocessImage = async (inputPath) => {
         .resize({ width: 1200 })
         .sharpen()
         .linear(1.2, -10)
-        .blur(0.3)
         .toFile(outputPath);
     return outputPath;
 }
@@ -54,14 +54,21 @@ const extractAmount = (text) => {
   const cleanText = text.replace(/(?<=\d)\s+(?=\d)/g, '');
   const lines = cleanText.split('\n');
 
-  const anchors = ['thanh toán', 'tổng cộng', 'tổng tiền', 'thành tiền', 'tiền hàng', 'tiền thanh toán', 'phải trả'];
+  const anchors = ['thanh toán', 'tổng cộng', 'tổng tiền', 'thành tiền', 'tiền hàng', 'tiền thanh toán', 'phải trả', 'thanh toan', 'tong cong', 'tong tien'];
   let potentialAmounts = [];
 
   for (let line of lines.reverse()) {
       const lowerLine = line.toLowerCase();
 
       // Kiểm tra xem dòng này có chứa từ khóa mục tiêu không
-      const hasAnchor = anchors.some(anchor => lowerLine.includes(anchor));
+      const normalize = (s) =>
+        s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+      const normLine = normalize(line);
+
+      const hasAnchor = anchors.some(anchor =>
+        normLine.includes(normalize(anchor))
+      );
 
       if (hasAnchor) {
         const amountRegex = /\d{1,3}(?:[.,]\d{3})+(?:[.,]\d+)?/g;
@@ -144,17 +151,10 @@ exports.scanReceipt = async (req, res) => {
   try {
     console.time("OCR_Duration");
     processedPath = await preprocessImage(originalPath);
+    const worker = getWorker();
 
     // 1. Chạy Tesseract OCR
-    const { data: { text } } = await tesseract.recognize(
-        processedPath,
-        'vie+eng',
-        { logger: m => console.log(m.status + ': ' + Math.round(m.progress * 100) + '%'),
-          tessedit_pageseg_mode: '6',
-          tessedit_char_whitelist:
-           '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzÀÁÂÃÈÉÊÌÍÒÓÔÕÙÚĂĐĨŨƠàáâãèéêìíòóôõùúăđĩũơ.,:/- ',
-        }
-    );
+    const { data: { text } } = await worker.recognize(processedPath);
 
     console.log("--------- DỮ LIỆU THÔ TESSERACT ĐỌC ĐƯỢC ---------");
     console.log(text);
