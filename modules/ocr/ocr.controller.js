@@ -50,8 +50,8 @@ const extractTitle = (text) => {
  */
 const extractAmount = (text) => {
   // Loại bỏ khoảng trắng nằm giữa các con số
-  const normalizedText = text.replace(/(?<=\d)\s+(?=\d)/g, '');
-  const lines = normalizedText.split('\n');
+  const cleanText = text.replace(/(?<=\d)\s+(?=\d)/g, '');
+  const lines = cleanText.split('\n');
 
   const anchors = ['thanh toán', 'tổng cộng', 'tổng tiền', 'thành tiền', 'tiền hàng', 'tiền thanh toán', 'phải trả'];
   let potentialAmounts = [];
