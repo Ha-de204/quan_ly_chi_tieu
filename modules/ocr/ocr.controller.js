@@ -15,6 +15,7 @@ const preprocessImage = async (inputPath) => {
         .resize({ width: 1200 })
         .sharpen()
         .linear(1.2, -10)
+        .blur(0.3)
         .toFile(outputPath);
     return outputPath;
 }
