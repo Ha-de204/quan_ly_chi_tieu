@@ -2,6 +2,7 @@ const tesseract = require('tesseract.js');
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp')
+const { getWorker } = require('../tesseractWorker');
 
 /**
  * Tiền xử lý ảnh
@@ -11,13 +12,23 @@ const preprocessImage = async (inputPath) => {
 
     await sharp(inputPath)
         .grayscale()
-        .resize(2000)
         .normalize()
         .sharpen()
-        .threshold(160)
+        .modulate({ brightness: 1.1, contrast: 1.4 })
+        .threshold(0)
         .toFile(outputPath);
     return outputPath;
 }
+
+const cleanText = (text) => {
+  return text
+    .replace(/[\/]/g, '0')
+    .replace(/[O]/g, '0')
+    .replace(/[lI]/g, '1')
+    .replace(/[^\x00-\x7FÀ-ỹ\n]/g, '')
+    .replace(/[ ]{2,}/g, ' ')
+    .trim();
+};
 
 /**
  * Hàm hỗ trợ trích xuất title
@@ -50,13 +61,13 @@ const extractTitle = (text) => {
  */
 const extractAmount = (text) => {
   // Loại bỏ khoảng trắng nằm giữa các con số
-  const cleanText = text.replace(/(?<=\d)\s+(?=\d)/g, '');
-  const lines = cleanText.split('\n');
+  const normalizedText = text.replace(/(?<=\d)\s+(?=\d)/g, '');
+  const lines = normalizedText.split('\n');
 
-  const anchors = ['thanh toán', 'tổng cộng', 'tổng tiền', 'thành tiền', 'tiền hàng', 'tiền thanh toán'];
+  const anchors = ['thanh toán', 'tổng cộng', 'tổng tiền', 'thành tiền', 'tiền hàng', 'tiền thanh toán', 'phải trả'];
   let potentialAmounts = [];
 
-  for (let line of lines) {
+  for (let line of lines.reverse()) {
       const lowerLine = line.toLowerCase();
 
       // Kiểm tra xem dòng này có chứa từ khóa mục tiêu không
@@ -119,11 +130,11 @@ const extractDate = (text) => {
 const suggestCategory = (text) => {
   const content = text.toLowerCase();
   const categories = {
-    'Đồ ăn': ['coffee', 'highlands', 'phúc long', 'starbucks', 'nhà hàng', 'trà sữa', 'mì', 'cơm', 'ăn sáng', 'nước uống', 'gà', 'cá', 'thịt', 'tôm', 'chả', 'ốc', 'xúc xích', 'rau', 'món'],
+    'Đồ ăn': ['coffee', 'highlands', 'phúc long', 'starbucks', 'nhà hàng', 'trà sữa', 'mì', 'cơm', 'ăn sáng', 'nước uống', 'gà', 'cá', 'thịt', 'tôm', 'chả', 'ốc', 'xúc xích', 'rau', 'món', 'củ', 'quả'],
     'Di chuyển': ['grab', 'be', 'xăng', 'gas', 'taxi', 'vận tải', 'phí gửi xe'],
     'Mua sắm': ['siêu thị', 'mart', 'mall', 'shopee', 'lazada', 'tiki', 'winmart', 'circle k', 'tạp hóa'],
     'Giải trí': ['cinema', 'rạp chiếu phim', 'cgv', 'lotte', 'vé xem phim', 'karaoke'],
-    'Sức khỏe': ['nhà thuốc', 'pharmacity', 'long châu', 'bệnh viện', 'phòng khám']
+    'Sức khỏe': ['nhà thuốc', 'pharmacity', 'long châu', 'bệnh viện', 'phòng khám', 'thuốc']
   };
 
   for (const [name, keys] of Object.entries(categories)) {
@@ -144,25 +155,24 @@ exports.scanReceipt = async (req, res) => {
     console.time("OCR_Duration");
     processedPath = await preprocessImage(originalPath);
 
+    const worker = getWorker();
+    if (!worker) {
+      throw new Error("OCR Worker chưa sẵn sàng");
+    }
+
     // 1. Chạy Tesseract OCR
-    const { data: { text } } = await tesseract.recognize(
-      processedPath,
-      'vie+eng',
-      {
-        logger: m => console.log(m.status + ': ' + Math.round(m.progress * 100) + '%'),
-        tessedit_pageseg_mode: '6'
-      }
-    );
+    const { data: { text } } = await worker.recognize(processedPath);
 
     console.log("--------- DỮ LIỆU THÔ TESSERACT ĐỌC ĐƯỢC ---------");
     console.log(text);
     console.log("--------------------------------------------------");
 
+    const cleaned = cleanText(text);
     // 2. Trích xuất thông tin bằng Regex
-    const amount = extractAmount(text);
-    const date = extractDate(text);
-    const categoryName = suggestCategory(text);
-    const title = extractTitle(text);
+    const amount = extractAmount(cleaned);
+    const date = extractDate(cleaned);
+    const categoryName = suggestCategory(cleaned);
+    const title = extractTitle(cleaned);
 
     // 3. Xóa file ảnh tạm sau khi xử lý để giải phóng bộ nhớ server
     if (fs.existsSync(originalPath)) fs.unlinkSync(originalPath);
