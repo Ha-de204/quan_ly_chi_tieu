@@ -31,6 +31,7 @@ const extractTitle = (text) => {
   if (rawTextLower.includes('thanhdo') || rawTextLower.includes('thanh do')) return "Thành Đô Mart";
   if (rawTextLower.includes('winmart')) return "WinMart";
   if (rawTextLower.includes('circle k')) return "Circle K";
+  if (rawTextLower.includes('mart')) return 'Siêu thị';
 
   // 2. Ưu tiên 2: Lấy dòng có chữ hoa dài nhất ở 5 dòng đầu tiên
   const topLines = lines.slice(0, 5);
