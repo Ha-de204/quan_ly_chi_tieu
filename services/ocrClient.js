@@ -16,13 +16,16 @@ const sendToOCRServer = async (fileBuffer, filename) => {
         const response = await axios.post(OCR_SERVER_URL, form, {
             headers: {
                 ...form.getHeaders(),
+                "Connection": "keep-alive"
             },
-            timeout: 60000,
+            timeout: 180000,
         });
 
         return response.data;
 
     } catch (error) {
+        console.log("STATUS:", error.response?.status);
+        console.log("DATA:", error.response?.data);
         console.error("OCR Server Error:", error.message);
         throw error;
     }
