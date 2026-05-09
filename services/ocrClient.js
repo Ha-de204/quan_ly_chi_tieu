@@ -18,7 +18,7 @@ const sendToOCRServer = async (fileBuffer, filename) => {
                 ...form.getHeaders(),
                 "Connection": "keep-alive"
             },
-            timeout: 180000,
+            timeout: 200000,
         });
 
         return response.data;

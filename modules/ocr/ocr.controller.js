@@ -10,8 +10,11 @@ exports.scanReceipt = async (req, res) => {
 
     const filePath = req.file.path;
 
+    const timerLabel = `OCR_${Date.now()}`;
+
+
     try {
-        console.time("OCR_TOTAL");
+        console.time(timerLabel);
 
         const fileBuffer = fs.readFileSync(filePath);
 
@@ -23,8 +26,6 @@ exports.scanReceipt = async (req, res) => {
 
         // 2. xóa file local backend
         fs.unlinkSync(filePath);
-
-        console.timeEnd("OCR_TOTAL");
 
         // 3. trả về frontend
         return res.status(200).json({
@@ -42,5 +43,8 @@ exports.scanReceipt = async (req, res) => {
             message: "OCR processing failed",
             error: error.message
         });
+    } finally {
+        // luôn đóng timer
+        console.timeEnd(timerLabel);
     }
 };
