@@ -2,7 +2,7 @@ const axios = require('axios');
 const FormData = require('form-data');
 
 //const OCR_SERVER_URL =  "http://127.0.0.1:8000/scan";
-const OCR_SERVER_URL = "https://ocr-server-hsoq.onrender.com";
+const OCR_SERVER_URL = "https://ocr-server-hsoq.onrender.com/scan";
 
 const sendToOCRServer = async (fileBuffer, filename) => {
     try {
