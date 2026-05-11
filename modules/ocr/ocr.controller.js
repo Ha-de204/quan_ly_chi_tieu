@@ -18,9 +18,6 @@ exports.scanReceipt = async (req, res) => {
 
         const fileBuffer = fs.readFileSync(filePath);
 
-        fs.writeFileSync('./debug_image.jpg', fileBuffer);
-        console.log("Đã lưu ảnh debug để kiểm tra chất lượng!");
-
         // 1. forward sang OCR server
         const ocrResult = await sendToOCRServer(
             fileBuffer,
@@ -47,7 +44,6 @@ exports.scanReceipt = async (req, res) => {
             error: error.message
         });
     } finally {
-        // luôn đóng timer
         console.timeEnd(timerLabel);
     }
 };
