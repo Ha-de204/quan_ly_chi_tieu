@@ -30,7 +30,7 @@ exports.scanReceipt = async (req, res) => {
         // 3. trả về frontend
         return res.status(200).json({
             success: true,
-            data: ocrResult
+            ...ocrResult
         });
 
     } catch (error) {
