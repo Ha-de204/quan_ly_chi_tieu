@@ -107,12 +107,19 @@ const forgotPassword = async (req, res) => {
         await user.save();
 
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true,
             auth: {
                user: process.env.EMAIL_USER,
                pass: process.env.EMAIL_PASS
             }
+            connectionTimeout: 10000,
         });
+
+        console.log(process.env.EMAIL_USER);
+        console.log(process.env.EMAIL_PASS ? "PASS OK" : "NO PASS");
+
 
         const mailOptions = {
            from: `"Hệ thống Quản lý Thu chi" <${process.env.EMAIL_USER}>`,
