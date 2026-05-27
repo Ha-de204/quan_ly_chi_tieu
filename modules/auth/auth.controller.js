@@ -113,8 +113,9 @@ const forgotPassword = async (req, res) => {
            auth: {
               user: process.env.EMAIL_USER,
               pass: process.env.EMAIL_PASS
-           }
+           },
            tls: {
+              ciphers: 'SSLv3',
               rejectUnauthorized: false
            }
         });
