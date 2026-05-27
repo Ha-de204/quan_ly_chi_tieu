@@ -1,7 +1,8 @@
 const userService = require('../../services/user.service');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
+const User = require('../../models/User')
+const nodemailer = require('nodemailer');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key';
 
@@ -11,9 +12,9 @@ const generateToken = (user_id) => {
 
 // đăng ký
 const registerUser = async (req, res) => {
-    const { userName, password } = req.body;
-    if (!userName || !password) {
-        return res.status(400).json({ message: 'Vui lòng cung cấp tên và mật khẩu.' });
+    const { userName, password, email } = req.body;
+    if (!userName || !password || !email) {
+        return res.status(400).json({ message: 'Vui lòng cung cấp tên, mật khẩu và email.' });
     }
     try {
         const existingUser = await userService.findUserByUserName(userName);
@@ -21,10 +22,15 @@ const registerUser = async (req, res) => {
             return res.status(409).json({ message: 'Tên người dùng đã tồn tại' });
         }
 
+        const existingEmail = await User.findOne({ email: email.toLowerCase() });
+        if (existingEmail) {
+            return res.status(409).json({ message: 'Email này đã được sử dụng bởi tài khoản khác.' });
+        }
+
         const salt = await bcrypt.genSalt(10);
         const hashedPass = await bcrypt.hash(password, salt);
 
-        const user_id = await userService.createUser( userName, hashedPass);
+        const user_id = await userService.createUser( userName, hashedPass, email.toLowerCase());
         //const user_id = "658123456789012345678901";
         const token = generateToken(user_id);
 
@@ -32,6 +38,7 @@ const registerUser = async (req, res) => {
             token,
             user_id: user_id,
             userName: userName,
+            email: email.toLowerCase(),
             message: 'Đăng ký tài khoản thành công!'
         });
 
@@ -77,6 +84,106 @@ const loginUser = async (req, res) => {
     }
 };
 
+// quên password
+const forgotPassword = async (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+        return res.status(400).json({ message: 'Vui lòng nhập email để nhận mã OTP.' });
+    }
+    try {
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            return res.status(404).json({ message: 'Không tìm thấy người dùng sở hữu email này.' });
+        }
+
+        // Tạo mã OTP
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedOtp = await bcrypt.hash(otpCode, salt);
+
+        user.resetPasswordToken = hashedOtp;
+        user.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
+        await user.save();
+
+        const transporter = nodemailer.createTransport({
+           service: 'gmail',
+           auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS
+           }
+        });
+
+        const mailOptions = {
+           from: `"Hệ thống Quản lý Thu chi" <${process.env.EMAIL_USER}>`,
+           to: email.toLowerCase(),
+           subject: 'Mã OTP khôi phục mật khẩu tài khoản',
+           html: `
+              <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #f0f0f0; max-width: 500px; border-radius: 10px;">
+                 <h2 style="color: #E91E63; text-align: center;">Khôi Phục Mật Khẩu</h2>
+                 <p>Chào bạn,</p>
+                 <p>Bạn nhận được email này vì đã yêu cầu khôi phục mật khẩu cho tài khoản ứng dụng Quản lý thu chi.</p>
+                 <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                    <span style="font-size: 24px; font-weight: bold; color: #333; letter-spacing: 5px;">${otpCode}</span>
+                 </div>
+                 <p style="color: #777; font-size: 13px;">Mã OTP này có hiệu lực trong vòng <b>10 phút</b>. Vui lòng không chia sẻ mã này cho bất kỳ ai.</p>
+                 <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                 <p style="font-size: 11px; color: #aaa; text-align: center;">Đây là email tự động, vui lòng không phản hồi lại email này.</p>
+              </div>
+           `
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        res.status(200).json({
+            success: true,
+            message: 'Mã OTP khôi phục mật khẩu đã được gửi đến email của bạn.'
+        });
+    } catch (error) {
+        console.error("Lỗi Yêu cầu OTP:", error);
+        res.status(500).json({ message: 'Lỗi máy chủ nội bộ.' });
+    }
+};
+
+// Xác thực OTP + set lại password
+const resetPassword = async (req, res) => {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) {
+        return res.status(400).json({ message: 'Vui lòng nhập đầy đủ email, mã OTP và mật khẩu mới.' });
+    }
+    try {
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user || !user.resetPasswordToken || !user.resetPasswordExpires) {
+            return res.status(400).json({ message: 'Yêu cầu đổi mật khẩu không hợp lệ hoặc không tồn tại.' });
+        }
+
+        if (Date.now() > user.resetPasswordExpires) {
+            return res.status(400).json({ message: 'Mã OTP đã hết hạn hiệu lực (quá 10 phút).' });
+        }
+
+        const isOtpMatch = await bcrypt.compare(otp, user.resetPasswordToken);
+        if (!isOtpMatch) {
+            return res.status(400).json({ message: 'Mã OTP không chính xác. Vui lòng thử lại.' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+
+        user.resetPasswordToken = null;
+        user.resetPasswordExpires = null;
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Đặt lại mật khẩu thành công! Bạn có thể đăng nhập bằng mật khẩu mới.'
+        });
+    } catch (error) {
+        console.error("Lỗi Đặt lại mật khẩu:", error);
+        res.status(500).json({ message: 'Lỗi máy chủ nội bộ.' });
+    }
+};
+
+// lấy profile
 const getProfile = async (req, res) => {
     const user_id = req.user.id || req.user_id;
     //const user_id = "658123456789012345678901";
@@ -98,4 +205,10 @@ const getProfile = async (req, res) => {
     }
 };
 
-module.exports = { registerUser, loginUser, getProfile };
+module.exports = {
+    registerUser,
+    loginUser,
+    forgotPassword,
+    resetPassword,
+    getProfile
+};
