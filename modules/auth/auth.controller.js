@@ -107,35 +107,11 @@ const forgotPassword = async (req, res) => {
         user.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
         await user.save();
 
-        const resend = new Resend(process.env.RESEND_API_KEY);
-
-        await resend.emails.send({
-                    // 'onboarding@resend.dev' là email mặc định của Resend cấp cho bạn để test miễn phí
-                    // sang bất kỳ Gmail cá nhân nào của bạn.
-                    from: 'Hệ thống Quản lý Thu chi <onboarding@resend.dev>',
-                    to: [email.toLowerCase()],
-                    subject: 'Mã OTP khôi phục mật khẩu tài khoản',
-                    html: `
-                      <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #f0f0f0; max-width: 500px; border-radius: 10px;">
-                         <h2 style="color: #E91E63; text-align: center;">Khôi Phục Mật Khẩu</h2>
-                         <p>Chào bạn,</p>
-                         <p>Bạn nhận được email này vì đã yêu cầu khôi phục mật khẩu cho tài khoản ứng dụng Quản lý thu chi.</p>
-                         <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
-                            <span style="font-size: 24px; font-weight: bold; color: #333; letter-spacing: 5px;">${otpCode}</span>
-                         </div>
-                         <p style="color: #777; font-size: 13px;">Mã OTP này có hiệu lực trong vòng <b>10 phút</b>. Vui lòng không chia sẻ mã này cho bất kỳ ai.</p>
-                         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-                         <p style="font-size: 11px; color: #aaa; text-align: center;">Đây là email tự động, vui lòng không phản hồi lại email này.</p>
-                      </div>
-                    `
-                });
-
-       {/* const transporter = nodemailer.createTransport({
-            pool: true,
-            host: 'smtp.gmail.com',
-            port: 465,
-            secure: true,
-            family: 4,
+       { const transporter = nodemailer.createTransport({
+            host: 'smtp-relay.brevo.com',
+            port: 587,
+            secure: false,
+            //family: 4,
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_PASS,
@@ -170,7 +146,6 @@ const forgotPassword = async (req, res) => {
         };
 
         await transporter.sendMail(mailOptions);
-        */}
 
         res.status(200).json({
             success: true,
