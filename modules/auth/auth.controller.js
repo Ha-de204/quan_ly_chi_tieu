@@ -115,7 +115,7 @@ const forgotPassword = async (req, res) => {
             {
                 sender: {
                     name: "Hệ thống Quản lý Thu chi",
-                    email: "acc9cc001@smtp-brevo.com" // Giữ nguyên email đăng ký Brevo của bạn
+                    email: "ngha17012004@gmail.com"
                 },
                 to: [{ email: email.toLowerCase() }],
                 subject: 'Mã OTP khôi phục mật khẩu tài khoản',
@@ -136,7 +136,7 @@ const forgotPassword = async (req, res) => {
             {
                 headers: {
                     'accept': 'application/json',
-                    'api-key': process.env.EMAIL_PASS, // Truyền API Key của Brevo lên header
+                    'api-key': process.env.EMAIL_PASS,
                     'content-type': 'application/json'
                 }
             }
