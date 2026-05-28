@@ -170,7 +170,7 @@ const forgotPassword = async (req, res) => {
         };
 
         await transporter.sendMail(mailOptions);
-        */
+        */}
 
         res.status(200).json({
             success: true,
