@@ -107,7 +107,7 @@ const forgotPassword = async (req, res) => {
         user.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
         await user.save();
 
-       { const transporter = nodemailer.createTransport({
+       const transporter = nodemailer.createTransport({
             host: 'smtp-relay.brevo.com',
             port: 587,
             secure: false,
