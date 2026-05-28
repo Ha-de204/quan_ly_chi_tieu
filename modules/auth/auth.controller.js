@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../../models/User')
 const nodemailer = require('nodemailer');
 const { Resend } = require('resend');
+const axios = require('axios');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key';
 
@@ -86,6 +87,7 @@ const loginUser = async (req, res) => {
 };
 
 // quên password
+// quên password
 const forgotPassword = async (req, res) => {
     const { email } = req.body;
     if (!email) {
@@ -107,53 +109,48 @@ const forgotPassword = async (req, res) => {
         user.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
         await user.save();
 
-       const transporter = nodemailer.createTransport({
-            host: 'smtp-relay.brevo.com',
-            port: 587,
-            secure: false,
-            //family: 4,
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
+        // 🔥 Gửi Mail bằng HTTP POST API xuyên qua tường lửa Render (Cổng 443 không bị chặn)
+        const response = await axios.post(
+            'https://api.brevo.com/v3/smtp/email',
+            {
+                sender: {
+                    name: "Hệ thống Quản lý Thu chi",
+                    email: "acc9cc001@smtp-brevo.com" // Giữ nguyên email đăng ký Brevo của bạn
+                },
+                to: [{ email: email.toLowerCase() }],
+                subject: 'Mã OTP khôi phục mật khẩu tài khoản',
+                htmlContent: `
+                  <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #f0f0f0; max-width: 500px; border-radius: 10px;">
+                     <h2 style="color: #E91E63; text-align: center;">Khôi Phục Mật Khẩu</h2>
+                     <p>Chào bạn,</p>
+                     <p>Bạn nhận được email này vì đã yêu cầu khôi phục mật khẩu cho tài khoản ứng dụng Quản lý thu chi.</p>
+                     <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
+                        <span style="font-size: 24px; font-weight: bold; color: #333; letter-spacing: 5px;">${otpCode}</span>
+                     </div>
+                     <p style="color: #777; font-size: 13px;">Mã OTP này có hiệu lực trong vòng <b>10 phút</b>. Vui lòng không chia sẻ mã này cho bất kỳ ai.</p>
+                     <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                     <p style="font-size: 11px; color: #aaa; text-align: center;">Đây là email tự động, vui lòng không phản hồi lại email này.</p>
+                  </div>
+               `
             },
-            tls: {
-                rejectUnauthorized: false
+            {
+                headers: {
+                    'accept': 'application/json',
+                    'api-key': process.env.EMAIL_PASS, // Truyền API Key của Brevo lên header
+                    'content-type': 'application/json'
+                }
             }
+        );
 
-        });
-
-        console.log(process.env.EMAIL_USER);
-        console.log(process.env.EMAIL_PASS ? "PASS OK" : "NO PASS");
-
-
-        const mailOptions = {
-           from: `"Hệ thống Quản lý Thu chi" <${process.env.EMAIL_USER}>`,
-           to: email.toLowerCase(),
-           subject: 'Mã OTP khôi phục mật khẩu tài khoản',
-           html: `
-              <div style="font-family: Arial, sans-serif; padding: 20px; border: 1px solid #f0f0f0; max-width: 500px; border-radius: 10px;">
-                 <h2 style="color: #E91E63; text-align: center;">Khôi Phục Mật Khẩu</h2>
-                 <p>Chào bạn,</p>
-                 <p>Bạn nhận được email này vì đã yêu cầu khôi phục mật khẩu cho tài khoản ứng dụng Quản lý thu chi.</p>
-                 <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0;">
-                    <span style="font-size: 24px; font-weight: bold; color: #333; letter-spacing: 5px;">${otpCode}</span>
-                 </div>
-                 <p style="color: #777; font-size: 13px;">Mã OTP này có hiệu lực trong vòng <b>10 phút</b>. Vui lòng không chia sẻ mã này cho bất kỳ ai.</p>
-                 <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-                 <p style="font-size: 11px; color: #aaa; text-align: center;">Đây là email tự động, vui lòng không phản hồi lại email này.</p>
-              </div>
-           `
-        };
-
-        await transporter.sendMail(mailOptions);
+        console.log("Gửi OTP thành công qua Brevo API:", response.data);
 
         res.status(200).json({
             success: true,
             message: 'Mã OTP khôi phục mật khẩu đã được gửi đến email của bạn.'
         });
     } catch (error) {
-        console.error("Lỗi Yêu cầu OTP:", error);
-        res.status(500).json({ message: 'Lỗi máy chủ nội bộ.' });
+        console.error("Lỗi Yêu cầu OTP qua API:", error.response ? error.response.data : error.message);
+        res.status(500).json({ message: 'Lỗi máy chủ nội bộ không thể gửi mail.' });
     }
 };
 
