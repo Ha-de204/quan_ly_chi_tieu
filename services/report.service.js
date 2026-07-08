@@ -73,7 +73,22 @@ const getMonthlyFlow = async (user_id, year) => {
         }
     ]);
 
+    const budgets = await Budget.find({
+        user_id: new mongoose.Types.ObjectId(user_id),
+        category_id: null,
+        period: {
+            $gte: `${year}-01`,
+            $lte: `${year}-12`
+        }
+    }).lean();
+
+
     const finalData = [];
+
+    const budgetMap = {};
+    budgets.forEach(item => {
+       budgetMap[item.period] = item.budget_amount;
+    });
 
     for (let month = 1; month <= 12; month++) {
 
@@ -88,11 +103,14 @@ const getMonthlyFlow = async (user_id, year) => {
         const expense = expenseData ? expenseData.total : 0;
         const income = incomeData ? incomeData.total : 0;
 
+        const period = `${year}-${month.toString().padStart(2, '0')}`;
+
         finalData.push({
             month,
             expense,
             income,
-            balance: income - expense
+            balance: income - expense,
+            budget: budgetMap[period] ?? 0
         });
     }
 

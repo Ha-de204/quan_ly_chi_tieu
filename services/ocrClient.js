@@ -23,7 +23,6 @@ const sendToOCRServer = async (fileBuffer, filename) => {
       timeout: 200000,
     });
 
-    console.log("=== DỮ LIỆU TỪ HUGGING FACE ===");
     console.log(JSON.stringify(response.data, null, 2))
 
     return response.data;
