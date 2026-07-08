@@ -10,7 +10,7 @@ const createTransaction = async (req, res) => {
     }
 
     try {
-        const transactionId = await transactionService.createTransaction(
+        const transaction = await transactionService.createTransaction(
             user_id,
             category_id,
             amount,
@@ -21,7 +21,6 @@ const createTransaction = async (req, res) => {
         );
 
         res.status(201).json({
-            transaction_id: transactionId,
             message: 'Tạo giao dịch thành công.',
             transaction
         });
