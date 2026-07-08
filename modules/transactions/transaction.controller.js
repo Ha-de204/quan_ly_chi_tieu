@@ -94,8 +94,8 @@ const updateTransaction = async (req, res) => {
 
         res.status(200).json({
             success: true,
-            message: 'Cập nhật giao dịch thành công.'
-            transaction
+            message: 'Cập nhật giao dịch thành công.',
+            transaction: transaction
         });
     } catch (error) {
         console.error('Lỗi cập nhật giao dịch:', error);
