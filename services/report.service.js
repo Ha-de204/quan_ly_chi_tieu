@@ -75,13 +75,14 @@ const getMonthlyFlow = async (user_id, year) => {
 
     const budgets = await Budget.find({
         user_id: new mongoose.Types.ObjectId(user_id),
-        category_id: null,
+        category_id: new mongoose.Types.ObjectId("000000000000000000000000"),
         period: {
             $gte: `${year}-01`,
             $lte: `${year}-12`
         }
     }).lean();
 
+    console.log(budgets);
 
     const finalData = [];
 
