@@ -117,6 +117,14 @@ const isCategoryUsed = async (categoryId) => {
 // 5. Xóa danh mục
 const deleteCategory = async (categoryId, user_id) => {
 
+     console.log("categoryId:", categoryId);
+     console.log("userId:", user_id);
+     const categoryDebug = await Category.findById(categoryId);
+
+    console.log(categoryDebug);
+    console.log("category.user_id =", categoryDebug?.user_id?.toString());
+    console.log("token.user_id    =", user_id.toString());
+
     // Lấy thông tin danh mục
     const category = await Category.findOne({
         _id: new mongoose.Types.ObjectId(categoryId),
